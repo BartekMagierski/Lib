@@ -1,0 +1,28 @@
+new XHRRequest({
+  path: "./",
+  method: "POST",
+  headers: "auto",
+  data: [
+    {
+      name: "test",
+      value: true
+    }, {
+      name: "foo",
+      value: "bar"
+    }
+  ],
+  progress: function(event) {
+    console.log( (event.loaded / event.total) * 100);
+  },
+  load: function(event) {
+    
+  },
+  error: function(event) {
+    
+  },
+  abort: function(event) {
+    
+  },
+  info: "test"
+
+});

@@ -1,0 +1,42 @@
+const modal = new Modal();
+  [
+    {
+      name: 'test',
+      html: 
+        <div class=modal >
+          <div class=wrapper >
+            <div class=content >
+              <div><h1>Hello World!!!</h1></div>
+            </div>
+            <div class=close >
+              <button ref=closeBtn >Close</button>
+            </div>
+          </div>
+        </div>,
+      handler: {
+        onshow: function() {
+          console.log(this);
+        },
+        onhide: function() {
+          console.log(this);
+          
+        },
+        clean: null
+      }
+    }
+  ].forEach(function(m) {
+
+      modal.add(m);
+
+  });
+
+
+  const t = modal.prepare("test");
+  t.show(document.body);
+  t.preserve = false;
+  t.hide();
+
+  onshow   => before  window was appended to DOM
+  onhide   => before window was removed  to DOM
+  clean    => after window was removed from register
+  preserve => remove... or not remove, window from register
