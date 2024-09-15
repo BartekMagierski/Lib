@@ -36,7 +36,7 @@ const modal = new Modal();
   t.preserve = false;
   t.hide();
 
-  onshow   => before  window was appended to DOM
-  onhide   => before window was removed  to DOM
+  onshow   => before window was appended to DOM
+  onhide   => before window was removed from DOM
   clean    => after window was removed from register
   preserve => remove... or not remove, window from register
