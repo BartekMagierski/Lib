@@ -18,7 +18,7 @@ btn.loadend – reading finished with either success or failure.
 "* btn.func = func(event){...} *"
 
 
-btn.wasInput().then(function(files){
+btn.wasInput.then(function(files){
   console.log(files);
   const x = document.createElement("img")
   x.src = files[0].src
