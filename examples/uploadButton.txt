@@ -1,4 +1,11 @@
 let btn = new UploadButton();
+return 
+{
+  wrapper: element 
+  button : element ( trigger )
+  input  : element ( hidden )
+  wasInput: () => promisse
+}
 
 btn.returnFormat = "readAsDataURL";
 btn.encodingFormat (only for readAsText) = "US-ASCII";
@@ -17,22 +24,16 @@ btn.wasInput().then(function(files){
   x.src = files[0].src
   document.body.prepend(x)
 })
-
-
 returns
 {
-  wrapper: element 
-  button : element ( trigger )
-  input  : element ( hidden )
-  files: [
+  [
     {
       name: string
       size: number ( bytesize )
       type: string ( dataURL )
       src : strig
     } 
-  ],
-  wasInput: () => promisse
+  ]
 }
   
 

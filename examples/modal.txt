@@ -2,8 +2,8 @@ const modal = new Modal();
   [
     {
       name: 'test',
-      html: 
-        <div class=modal >
+      html: `
+        <div >
           <div class=wrapper >
             <div class=content >
               <div><h1>Hello World!!!</h1></div>
@@ -12,16 +12,26 @@ const modal = new Modal();
               <button ref=closeBtn >Close</button>
             </div>
           </div>
-        </div>,
+        </div>`,
       handler: {
+        beforeCreated: function(HTMLstring) {
+          return HTMLstring;
+        },
+        beforeRegister: function(instance) {
+          instance.node.querySelector("[ref=closeBtn]").addEventListener("click", function() {
+            instance.hide()
+          })
+        },
         onshow: function() {
-          console.log(this);
+
         },
         onhide: function() {
-          console.log(this);
+        
           
         },
-        clean: null
+        clean: function() {
+
+        }
       }
     }
   ].forEach(function(m) {
@@ -31,12 +41,16 @@ const modal = new Modal();
   });
 
 
-  const t = modal.prepare("test");
-  t.show(document.body);
-  t.preserve = false;
-  t.hide();
 
-  onshow   => before window was appended to DOM
-  onhide   => before window was removed from DOM
-  clean    => after window was removed from register
+  const t = modal.prepare("test");
+  modal.find(t).show(document.body);
+  modal.find(t).preserve = false;
+  
   preserve => remove... or not remove, window from register
+
+  beforeCreated   => Hook before prototype was created
+    returns => HTMLstring
+  beforeRegister  => Hook before modal was registered
+  onshow   => Hook before node was inserted in to DOM
+  onhide   => Hook before node was removed from DOM
+  clean    => Hook after modal instance was removed from register

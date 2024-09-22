@@ -1,0 +1,26 @@
+const reg = new Reg_();
+
+reg.save("test", JSON.stringify({foo: "bar"}), {
+  deep: true,
+  mime: "application/json"
+} );
+
+reg.save(id, value, param)
+  id => symbol or string
+  value => value to save
+  param => object
+    deep => bool   ? store as Blob, when true mime is required
+    mime => string ? MIME for Blob
+
+reg.has(id)
+  id => symbol or string
+reg.remove(id)
+  id => symbol or string
+reg.fetch(id)
+  id => symbol or string
+
+reg.list
+  returns object
+
+
+makeToken() => generate random token
