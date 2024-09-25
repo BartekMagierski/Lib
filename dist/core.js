@@ -641,21 +641,15 @@ UploadButton = class UploadButton {
   }
 
   prepareNode() {
-    var self, setup, template, wrapper;
+    var self, setupEvent, template, wrapper;
     template = document.createElement("template");
     template.innerHTML = `<div role="button">
   <button ref="btn">Browse</button>
   <input  ref="inpt" type="file" hidden />
 </div>`;
     wrapper = template.content.firstElementChild;
-    setup = this.setupNode.bind(this);
+    setupEvent = this.setup.bind(this);
     self = (what, state) => {
-      if (what === "resolve") {
-        this.success = state;
-      }
-      if (what === "reject") {
-        this.failure = state;
-      }
       if (what === "fileReadMethod") {
         this.fileReadMethod = state;
       }
@@ -668,16 +662,10 @@ UploadButton = class UploadButton {
         wrapper: wrapper,
         button: wrapper.querySelector("[ref=btn]"),
         input: wrapper.querySelector("[ref=inpt]"),
-        files: []
-      }
-    });
-    Object.defineProperty(this.export, "wasInput", {
-      get() {
-        return new Promise ((resolve, reject) => {
-          setup();
-          self("resolve", resolve);
-          self("reject", reject);
-        })
+        files: [],
+        setup: function() {
+          return setupEvent();
+        }
       }
     });
     Object.defineProperty(this.export, "returnFormat", {
@@ -718,12 +706,13 @@ UploadButton = class UploadButton {
     });
   }
 
-  setupNode() {
+  setup() {
     this.export.button.addEventListener("click", () => {
       return this.export.input.click();
     });
     return this.export.input.addEventListener("input", (event) => {
       var reader;
+      // event.target.files because, when adding more than one file
       reader = new FileReader();
       return Array.from(event.target.files).forEach((file) => {
         switch (this.fileReadMethod) {
@@ -767,18 +756,18 @@ UploadButton = class UploadButton {
             return this.export.loadend(event);
           };
         }
-        reader.onerror = () => {
-          console.error(reader.error);
-          return this.failure("Upload error, client side");
-        };
-        return reader.onload = () => {
-          this.export.files.push({
+        if (this.export.onerror) {
+          reader.onerror = (event) => {
+            return this.export.onerror(event);
+          };
+        }
+        return reader.onload = (event) => {
+          return this.export.onload(event, {
             name: file.name,
             size: file.size,
             type: file.type,
             src: reader.result
           });
-          return this.success(this.export.files);
         };
       });
     });
