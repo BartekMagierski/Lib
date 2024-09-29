@@ -129,7 +129,7 @@ Reg_ = class Reg_ {
 
 };
 
-var findAttr, makeToken, rand;
+var findAttr, isArray, isObject, makeToken, rand;
 
 rand = function() {
   return Math.random().toString(36).substring(2);
@@ -139,65 +139,73 @@ makeToken = function() {
   return rand() + rand();
 };
 
-findAttr = function(attr, node, arg) {
-  var attribute, item, items, key, obj, ref, results, rmoAttr, tmp, x;
-  if (!attr || !node || typeof attr !== "string" || !node instanceof Element) {
-    console.info(`Function 'findAttr' accepts 3 argumets: name, node/s to search and ?options(Object)
-Argument 'arrt' might be an array of strings
-options:
-  - ?clean   (Bool)   -> remove atribute from node
-  - ?cleanFor(String) -> remove just specific attribute, might be an array `);
-    throw "Mising parameter";
+isArray = function(x) {
+  return Array.isArray(x);
+};
+
+isObject = function(x) {
+  return x instanceof Object;
+};
+
+findAttr = function(attr, node, arg = {}) {
+  var attrId, attribute, item, items, ref, ref1, ref2, ref3, refGrp, refID, tmp, y;
+  if (!attr || !node || typeof attr !== "string" && !isArray(attr) || !node instanceof Element) {
+    console.info(`findAttr = (attr, node, arg = {}) ->
+ attr (String || [String]) -> node's attribute , 
+ node (Element)            ->  haystack 
+ ?options (Object)
+   - ?clean (Mixed) -> 
+     (bool)               remove all searched attributes from the node
+     (String || [String]) remove just specific attribute from the node
+ returns (Object)`);
+    throw new Error("incorrect function call");
   }
   tmp = new WeakMap();
   items = {};
-  if (!Array.isArray(attr)) {
+  if (!isArray(attr)) {
     attr = [attr];
   }
-// find
-  for (attribute of attr) {
-    tmp.get(items)[attribute] = node.querySelector(attribute);
+  if (!(!arg.clean || isArray(arg.clean))) {
+    arg.clean = [arg.clean];
   }
-  // clean if required
-  if (arg && arg.clean || arg.cleanFor) {
-    ref = Object.entries(tmp.get(items));
-    results = [];
-    for (x of ref) {
-      [key, obj] = x;
-      results.push((function() {
-        var results1;
-        results1 = [];
-        for (item of obj) {
-          if (arg.clean) {
-            results1.push(obj.removeAttribute(key));
-          } else {
-            results1.push((function() {
-              var ref1, results2;
-              ref1 = arg.cleanFor;
-              results2 = [];
-              for (rmoAttr of ref1) {
-                if (obj.hasAttribute(rmoAttr)) {
-                  results2.push(obj.removeAttribute(rmoAttr));
-                } else {
-                  results2.push(void 0);
-                }
-              }
-              return results2;
-            })());
+  tmp.set(items, {});
+  for (attribute of attr) {
+    // prepare locker
+    tmp.get(items)[attribute] = {};
+    ref = Array.from(node.querySelectorAll(`[${attribute}]`));
+    // insert ref in to locker
+    for (item of ref) {
+      refID = item.getAttribute(attribute);
+      tmp.get(items)[attribute][refID] = item;
+    }
+  }
+  
+  // remove ref(attribute) from node
+  if (arg.clean) {
+    ref1 = Object.entries(tmp.get(items));
+    for (y of ref1) {
+      [attrId, refGrp] = y;
+      if (arg.clean === true) {
+        ref2 = Object.values(refGrp);
+        for (item of ref2) {
+          item.removeAttribute(attrId);
+        }
+      } else {
+        ref3 = Object.values(refGrp);
+        for (item of ref3) {
+          if (arg.clean.includes(attrId)) {
+            item.removeAttribute(attrId);
           }
         }
-        return results1;
-      })());
+      }
     }
-    return results;
+  }
+  
+  // if only one ref group was requested, return just that group not all object
+  if (attr.length === 1) {
+    return tmp.get(items)[attr[0]];
   } else {
-    
-    // return
-    if (Object.values(tmp.get(items)).length === 1) {
-      return tmp.get(items)[attr[0]];
-    } else {
-      return tmp.get(items);
-    }
+    return tmp.get(items);
   }
 };
 
@@ -336,7 +344,7 @@ Modal = class Modal {
       Object.defineProperty(modalObject, "show", {
         value: function(container) {
           if (!container || !container instanceof Element) {
-            throw "Missing target container";
+            throw container = document.body;
           }
           this.container = container;
           // Hook before node was inserted in to DOM
@@ -644,10 +652,9 @@ UploadButton = class UploadButton {
     var self, setupEvent, template, wrapper;
     template = document.createElement("template");
     template.innerHTML = `<div role="button">
-  <button ref="btn">Browse</button>
+  <button ref="btn" onclick="this.nextElementSibling.click()" >Browse</button>
   <input  ref="inpt" type="file" hidden />
 </div>`;
-    wrapper = template.content.firstElementChild;
     setupEvent = this.setup.bind(this);
     self = (what, state) => {
       if (what === "fileReadMethod") {
@@ -657,12 +664,30 @@ UploadButton = class UploadButton {
         return this.readerEncoding = state;
       }
     };
+    
+    // Return form class
+    wrapper = template.content.firstElementChild;
     Object.defineProperty(this, "export", {
       value: {
         wrapper: wrapper,
         button: wrapper.querySelector("[ref=btn]"),
         input: wrapper.querySelector("[ref=inpt]"),
         files: [],
+        swapWith: function(btn) {
+          if (!btn || !btn instanceof Element || btn.localName !== 'button') {
+            console.info("Missing button parameter or isn't instnce of Element");
+            throw new Error("The button wasn't swapped");
+          }
+          // Assign event
+          btn.addEventListener("click", () => {
+            return this.input.click();
+          });
+          // Swap
+          btn.parentNode.replaceChild(this.wrapper, btn); // swap orginal button node witch (whole) generic wrapper Element
+          this.wrapper.replaceChild(btn, this.button); // inside wrapper Element, swap generic button node witch original one
+          return this.button = btn; // inside export object, swap generic button Element which original button node, 
+        },
+        // Initiate upload events
         setup: function() {
           return setupEvent();
         }
@@ -685,36 +710,31 @@ UploadButton = class UploadButton {
         } else self("fileReadMethod", type);
 
       }
+      
+    // Read method 
     });
-    return Object.defineProperty(this.export, "encodingFormat", {
+    Object.defineProperty(this.export, "encodingFormat", {
       set(type) {
-
-        const valid = ["US-ASCII","ISO_8859-1:1987","ISO_8859-2:1987","ISO_8859-3:1988","ISO_8859-4:1988","ISO_8859-5:1988","ISO_8859-6:1987","ISO_8859-7:1987","ISO_8859-8:1988","ISO_8859-9:1989","ISO-8859-10","ISO_6937-2-add","JIS_X0201","JIS_Encoding","Shift_JIS","Extended_UNIX_Code_Packed_Format_for_Japanese","Extended_UNIX_Code_Fixed_Width_for_Japanese","BS_4730","SEN_850200_C","IT","ES","DIN_66003","NS_4551-1","NF_Z_62-010","ISO-10646-UTF-1","ISO_646.basic:1983","INVARIANT","ISO_646.irv:1983","NATS-SEFI","NATS-SEFI-ADD","NATS-DANO","NATS-DANO-ADD","SEN_850200_B","KS_C_5601-1987","ISO-2022-KR","EUC-KR","ISO-2022-JP","ISO-2022-JP-2","JIS_C6220-1969-jp","JIS_C6220-1969-ro","PT","greek7-old","latin-greek","NF_Z_62-010_(1973)","Latin-greek-1","ISO_5427","JIS_C6226-1978","BS_viewdata","INIS","INIS-8","INIS-cyrillic","ISO_5427:1981","ISO_5428:1980","GB_1988-80","GB_2312-80","NS_4551-2","videotex-suppl","PT2","ES2","MSZ_7795.3","JIS_C6226-1983","greek7","ASMO_449","iso-ir-90","JIS_C6229-1984-a","JIS_C6229-1984-b","JIS_C6229-1984-b-add","JIS_C6229-1984-hand","JIS_C6229-1984-hand-add","JIS_C6229-1984-kana","ISO_2033-1983","ANSI_X3.110-1983","T.61-7bit","T.61-8bit","ECMA-cyrillic","CSA_Z243.4-1985-1","CSA_Z243.4-1985-2","CSA_Z243.4-1985-gr","ISO_8859-6-E","ISO_8859-6-I","T.101-G2","ISO_8859-8-E","ISO_8859-8-I","CSN_369103","JUS_I.B1.002","IEC_P27-1","JUS_I.B1.003-serb","JUS_I.B1.003-mac","greek-ccitt","NC_NC00-10:81","ISO_6937-2-25","GOST_19768-74","ISO_8859-supp","ISO_10367-box","latin-lap","JIS_X0212-1990","DS_2089","us-dk","dk-us","KSC5636","UNICODE-1-1-UTF-7","ISO-2022-CN","ISO-2022-CN-EXT","UTF-8","ISO-8859-13","ISO-8859-14","ISO-8859-15","ISO-8859-16","GBK","GB18030","OSD_EBCDIC_DF04_15","OSD_EBCDIC_DF03_IRV","OSD_EBCDIC_DF04_1","ISO-11548-1","KZ-1048","ISO-10646-UCS-2","ISO-10646-UCS-4","ISO-10646-UCS-Basic","ISO-10646-Unicode-Latin1","ISO-10646-J-1","ISO-Unicode-IBM-1261","ISO-Unicode-IBM-1268","ISO-Unicode-IBM-1276","ISO-Unicode-IBM-1264","ISO-Unicode-IBM-1265","UNICODE-1-1","SCSU","UTF-7","UTF-16BE","UTF-16LE","UTF-16","CESU-8","UTF-32","UTF-32BE","UTF-32LE","BOCU-1","UTF-7-IMAP","ISO-8859-1-Windows-3.0-Latin-1","ISO-8859-1-Windows-3.1-Latin-1","ISO-8859-2-Windows-Latin-2","ISO-8859-9-Windows-Latin-5","hp-roman8","Adobe-Standard-Encoding","Ventura-US","Ventura-International","DEC-MCS","IBM850","PC8-Danish-Norwegian","IBM862","PC8-Turkish","IBM-Symbols","IBM-Thai","HP-Legal","HP-Pi-font","HP-Math8","Adobe-Symbol-Encoding","HP-DeskTop","Ventura-Math","Microsoft-Publishing","Windows-31J","GB2312","Big5","macintosh","IBM037","IBM038","IBM273","IBM274","IBM275","IBM277","IBM278","IBM280","IBM281","IBM284","IBM285","IBM290","IBM297","IBM420","IBM423","IBM424","IBM437","IBM500","IBM851","IBM852","IBM855","IBM857","IBM860","IBM861","IBM863","IBM864","IBM865","IBM868","IBM869","IBM870","IBM871","IBM880","IBM891","IBM903","IBM904","IBM905","IBM918","IBM1026","EBCDIC-AT-DE","EBCDIC-AT-DE-A","EBCDIC-CA-FR","EBCDIC-DK-NO","EBCDIC-DK-NO-A","EBCDIC-FI-SE","EBCDIC-FI-SE-A","EBCDIC-FR","EBCDIC-IT","EBCDIC-PT","EBCDIC-ES","EBCDIC-ES-A","EBCDIC-ES-S","EBCDIC-UK","EBCDIC-US","UNKNOWN-8BIT","MNEMONIC","MNEM","VISCII","VIQR","KOI8-R","HZ-GB-2312","IBM866","IBM775","KOI8-U","IBM00858","IBM00924","IBM01140","IBM01141","IBM01142","IBM01143","IBM01144","IBM01145","IBM01146","IBM01147","IBM01148","IBM01149","Big5-HKSCS","IBM1047","PTCP154","Amiga-1251","KOI7-switched","BRF","TSCII","CP51932","windows-874","windows-1250","windows-1251","windows-1252","windows-1253","windows-1254","windows-1255","windows-1256","windows-1257","windows-1258","TIS-620","CP50220"]
-          .some(function(method) {
-            return method === type;
-        });
-
-        if(!valid) {
-          console.group("%cUpload button", "color:orange");
-          console.warn("Unknown encoding format");
-          console.info("Using default (utf-8)");
-          console.groupEnd();
-          self("readerEncoding", "utf-8");
-        } else self("readerEncoding", type);
-
+        self("readerEncoding", type);
       }
+      // File encoding format ( only for read as text )
+    });
+    return Object.defineProperty(this.export, "allowMultiple", {
+      set(val) {
+        val 
+          ? this.input.setAttribute("multiple", "multiple")
+          : this.input.removeAttribute("multiple", "multiple")
+      }
+      // Allow multiple files input
     });
   }
 
   setup() {
-    this.export.button.addEventListener("click", () => {
-      return this.export.input.click();
-    });
     return this.export.input.addEventListener("input", (event) => {
-      var reader;
       // event.target.files because, when adding more than one file
-      reader = new FileReader();
       return Array.from(event.target.files).forEach((file) => {
+        var reader;
+        reader = new FileReader();
         switch (this.fileReadMethod) {
           case "readAsArrayBuffer":
             reader.readAsArrayBuffer(file);
@@ -730,11 +750,11 @@ UploadButton = class UploadButton {
               console.warn("readAsText, encoding wasn't defined");
               console.info("Using default (utf-8)");
               console.groupEnd();
-              reader.readAsDataURL(file);
+              reader.readAsDataURL(file, "utf-8");
             }
             break;
           default:
-            throw new Error("Wrong file read method");
+            throw new Error("Wrong read method");
         }
         if (this.export.loadstart) {
           reader.onloadstart = (event) => {
@@ -762,7 +782,7 @@ UploadButton = class UploadButton {
           };
         }
         return reader.onload = (event) => {
-          return this.export.onload(event, {
+          return this.export.onload({
             name: file.name,
             size: file.size,
             type: file.type,

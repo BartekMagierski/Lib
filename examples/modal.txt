@@ -17,20 +17,17 @@ const modal = new Modal();
         beforeCreated: function(HTMLstring) {
           return HTMLstring;
         },
-        beforeRegister: function(instance) {
-          instance.node.querySelector("[ref=closeBtn]").addEventListener("click", function() {
-            instance.hide()
-          })
+        beforeRegister: function(windowInstance) {
+         return void
         },
         onshow: function() {
-
+          return void
         },
         onhide: function() {
-        
-          
+          return void
         },
         clean: function() {
-
+          return void
         }
       }
     }
@@ -45,6 +42,10 @@ const modal = new Modal();
   const t = modal.prepare("test");
   modal.find(t).show(document.body);
   modal.find(t).preserve = false;
+  
+  when modal.find("test") the returns window's prototype
+  when modal.find(t) then returns window instance
+
   
   preserve => remove... or not remove, window from register
 

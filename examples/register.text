@@ -21,6 +21,3 @@ reg.fetch(id)
 
 reg.list
   returns object
-
-
-makeToken() => generate random token

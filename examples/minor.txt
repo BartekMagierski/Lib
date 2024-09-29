@@ -1,0 +1,22 @@
+rand = -> random token
+  returns (String)
+  
+makeToken = random token, but longer
+  returns (String)
+  
+
+isArray = (x) -> 
+  returns (Bool)
+
+isObject = (x) ->
+  returns (bool)
+
+
+findAttr = (attr, node, arg = {}) ->
+  attr (String || [String]) -> node's attribute , 
+  node (Element)            ->  haystack 
+  ?options (Object)
+    - ?clean (Mixed) -> 
+      (bool)               remove all searched attributes from the node
+      (String || [String]) remove just specific attribute from the node
+  returns (Object)
