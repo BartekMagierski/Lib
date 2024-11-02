@@ -11,6 +11,8 @@ isArray = (x) ->
 isObject = (x) ->
   returns (bool)
 
+//await
+till(number) => return async,
 
 findAttr = (attr, node, arg = {}) ->
   attr (String || [String]) -> node's attribute , 

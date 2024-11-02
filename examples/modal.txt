@@ -39,15 +39,16 @@ const modal = new Modal();
 
 
 
-  const t = modal.prepare("test");
-  modal.find(t).show(document.body);
-  modal.find(t).preserve = false;
+  modal.prepare(frame id) => prepare modal prototype, return symbol
+  modal.find(id) => find prototype, throw error if null
+
+  modal.find(t).show(default document.body) => make modal instance and show in DOM
+  modal.find(t).preserve = default true; remove... or not remove, modal instance from register after "onhide"
   
-  when modal.find("test") the returns window's prototype
-  when modal.find(t) then returns window instance
+  when modal.find(frame id)  returns modal prototype
+  when modal.find(symbol)    returns modal instance
 
   
-  preserve => remove... or not remove, window from register
 
   beforeCreated   => Hook before prototype was created
     returns => HTMLstring
@@ -55,3 +56,34 @@ const modal = new Modal();
   onshow   => Hook before node was inserted in to DOM
   onhide   => Hook before node was removed from DOM
   clean    => Hook after modal instance was removed from register
+
+
+
+  DEFAULTS
+    Default modals. Requires Bootstrap 5.3.3+ 
+    To actvate animations pass animation object to constructor, it is optional
+  
+  Types:
+    - success (green)
+    - error   (red)
+    - info    (primary/blue)
+    - text    (secondary/gray)
+
+  Example:
+    // Whole object in modal constructor is optional
+    const modal = new ModalDefaults({
+      loadBootstrap: false,// Include bootstap style i header
+      // When not set or null animations won't be included, and when empty object, defaults will be used
+      animation: {
+        durration: 400//number in ms, default 400ms
+      }
+    });
+    modal.throwMsg({
+      type: "text",
+      text: {
+        title  : "ERROR",
+        message: "Et dolore vel eum vel. Alias et rem non quos enim. Et ipsum quo perferendis. Nobis est laborum rerum autem. Velit vel odit laboriosam blanditiis.Non consequatur reiciendis eaque voluptas. Iste numquam aut eaque impedit mollitia. Unde fugiat dolor ut. Voluptatibus earum dignissimos atque. Quos harum repudiandae totam odio nulla. Non nobis sint velit.",
+        button : "close"
+      }
+    })
+      

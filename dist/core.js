@@ -129,7 +129,7 @@ Reg_ = class Reg_ {
 
 };
 
-var findAttr, isArray, isObject, makeToken, rand;
+var findAttr, isArray, isObject, makeToken, rand, till;
 
 rand = function() {
   return Math.random().toString(36).substring(2);
@@ -145,6 +145,18 @@ isArray = function(x) {
 
 isObject = function(x) {
   return x instanceof Object;
+};
+
+// Await 
+till = function(durr) {
+  if (!durr || typeof durr !== "number") {
+    return;
+  }
+  return new Promise(function(resolve) {
+    return setTimeout(function() {
+      return resolve();
+    }, durr);
+  });
 };
 
 findAttr = function(attr, node, arg = {}) {
@@ -218,10 +230,14 @@ Modal = class Modal {
       locker: {},
       history: [],
       has: function(id) {
-        if (this.locker[id]) {
-          return true;
-        } else {
+        if (!this.locker[id]) {
+          // Inform that modal wasn't preserved
+          if (this.history.includes(id)) {
+            console.info("Modal instance was removed from register\nUse |preserve = true| if you wish to reuse modal after \"hide\" event");
+          }
           return false;
+        } else {
+          return true;
         }
       },
       add: function(id, value) {
@@ -235,15 +251,8 @@ Modal = class Modal {
       },
       fetch: function(id) {
         var token;
-        if (!id) {
+        if (!id || !this.has(id)) {
           return null;
-        }
-        if (!this.has(id)) {
-          if (this.history.includes(id)) {
-            return console.info("Modal instance was removed from register\nUse |preserve = true| if you wish to reuse modal after hide event");
-          } else {
-            throw "No such modal";
-          }
         }
         token = this.locker[id];
         return this.reg.fetch(token);
@@ -298,79 +307,93 @@ Modal = class Modal {
   }
 
   prepare(name) {
-    var e, modalObject, prototype, sym;
-    try {
-      if (!name) {
-        throw "Missing name";
-      }
-      sym = Symbol(name);
-      modalObject = {};
-      prototype = this.register.fetch(name);
-      Object.defineProperty(modalObject, "name", {
+    var modalObject, prototype, sym;
+    if (!name) {
+      throw "Missing prototype id";
+    }
+    sym = Symbol(name);
+    modalObject = {};
+    prototype = this.register.fetch(name);
+    if (!prototype) {
+      throw "No such prototype";
+    }
+    Object.defineProperties(modalObject, {
+      name: {
         value: prototype.name,
-        writable: false
-      });
-      Object.defineProperty(modalObject, "node", {
-        value: prototype.template.content.firstElementChild,
-        writable: false
-      });
-      Object.defineProperty(modalObject, "sym", {
+        writable: false,
+        configurable: false
+      },
+      node: {
+        value: prototype.template.content.firstElementChild.cloneNode(true),
+        writable: false,
+        configurable: false
+      },
+      sym: {
         value: sym,
-        writable: false
-      });
-      Object.defineProperty(modalObject, "remove", {
+        writable: false,
+        configurable: false
+      },
+      remove: {
         value: this.register.remove.bind(this.register),
-        writable: false
-      });
-      Object.defineProperty(modalObject, "preserve", {
-        set: function(state) {
-          return this.isPreserved = state ? "true" : false;
-        }
-      });
-      Object.defineProperty(modalObject, "onshow", {
+        writable: false,
+        configurable: false
+      },
+      onshow: {
         value: prototype.onshow,
-        writable: false
-      });
-      Object.defineProperty(modalObject, "onhide", {
+        writable: false,
+        configurable: false
+      },
+      onhide: {
         value: prototype.onhide,
-        writable: false
-      });
-      Object.defineProperty(modalObject, "clean", {
+        writable: false,
+        configurable: false
+      },
+      clean: {
         value: prototype.clean,
-        writable: false
-      });
-      
+        writable: false,
+        configurable: false
+      },
+      isPreserved: {
+        value: true,
+        writable: true,
+        configurable: false
+      },
+      preserve: {
+        set: function(state) {
+          return this.isPreserved = state ? true : false;
+        }
+      },
       // SHOW
-      Object.defineProperty(modalObject, "show", {
+      show: {
         value: function(container) {
           if (!container || !container instanceof Element) {
-            throw container = document.body;
+            container = document.body;
           }
           this.container = container;
-          // Hook before node was inserted in to DOM
+          // Hook "before node was inserted in to DOM"
           if (this.onshow) {
-            this.onshow();
+            this.onshow(modalObject);
+            container.appendChild(this.node);
+          } else {
+            container.appendChild(this.node);
           }
-          // Insert node in to DOM
-          container.appendChild(this.node);
+          
           // Leave information that currently node is in DOM
           return this.onDisplay = true;
         },
         writable: false,
         configurable: false
-      });
+      },
       // HIDE
-      Object.defineProperty(modalObject, "hide", {
-        value: function() {
-          if (!!this.wasRemoved) {
-            return this.wasRemoved();
-          }
-          // Hook before node was hidden 
+      hide: {
+        value: async function() {
+          // Hook "Before node will be removed from DOM 
           if (this.onhide) {
-            this.onhide();
+            await this.onhide(modalObject);
+            this.container.removeChild(this.node);
+          } else {
+            this.container.removeChild(this.node);
           }
-          // Remove node from DOM
-          this.container.removeChild(this.node);
           if (!this.isPreserved) {
             
             // Remove from register
@@ -379,41 +402,356 @@ Modal = class Modal {
             if (this.clean) {
               this.clean();
             }
-            // When "clean" hook was defined, but modal is preserved, notify about that fact
-            if (this.clean && !this.isPreserved) {
-              return console.info("\"clean\" hook won't work if modal is preserved ");
-            }
           } else {
-            // When "isPreserved" just leave information that currently node isn't in DOM 
-            return this.onDisplay = false;
+            this.noDisplay = false;
+          }
+          // When "clean" hook was used, but modal is preserved, notify about that it wont work
+          if (this.clean && this.isPreserved) {
+            return console.info("\"clean\" hook won't work if modal is preserved ");
           }
         },
         writable: false,
         configurable: false
-      });
-      if (!!prototype.beforeRegister) {
-        
-        // Hook before modal was registered
-        prototype.beforeRegister(modalObject);
       }
-      this.register.add(sym, modalObject);
-      this.register.history.push(sym);
-      return sym;
-    } catch (error) {
-      e = error;
-      throw `Modal preparation failed\n${e}`;
+    });
+    if (!!prototype.beforeRegister) {
+      
+      // Hook "before modal was registered"
+      prototype.beforeRegister(modalObject);
     }
+    this.register.add(sym, modalObject);
+    this.register.history.push(sym);
+    return sym;
   }
 
   find(sym) {
-    if (!sym || !sym instanceof Symbol) {
-      return null;
+    var e, obj;
+    try {
+      obj = this.register.fetch(sym);
+      if (obj === null) {
+        throw "Instance does not exist";
+      } else {
+        return obj;
+      }
+    } catch (error) {
+      e = error;
+      if (e instanceof Error) {
+        return console.error(e);
+      } else {
+        throw e;
+      }
     }
-    if (this.register.has(sym)) {
-      return this.register.fetch(sym);
-    } else {
-      return null;
+  }
+
+};
+
+var ModalDefaults;
+
+ModalDefaults = class ModalDefaults extends Modal {
+  constructor(args1 = {}) {
+    console.info("Modal defaults requires Bootstrap 5.3.3+, use \"loadBootstrap()\" if necessary");
+    super();
+    this.args = args1;
+    this.localStorage = {
+      type: {
+        items: [],
+        has: function(id) {
+          return this.items.includes(id != null ? id : false);
+        },
+        add: function(id) {
+          if (!this.has(id)) {
+            return this.items.push(id);
+          } else {
+            throw "Type exist";
+          }
+        },
+        list: function() {
+          return this.items;
+        }
+      }
+    };
+    // Load animations
+    if (this.args.loadBootstrap) {
+      this.loadBootstrap();
     }
+    if (this.args["animation"]) {
+      this.animations = true;
+      Object.defineProperties(this, {
+        animationDurration: {
+          get: function() {
+            if (this.args.animation["durration"]) {
+              return this.args.animation.durration;
+            } else {
+              return 300;
+            }
+          }
+        }
+      });
+      this.loadAnimations();
+    }
+    this.make();
+  }
+
+  throwMsg(args) {
+    var e, instance, sym;
+    try {
+      if (!this.localStorage.type.has(args.type)) {
+        console.group("Modal defaults");
+        console.info(`Available defaults`);
+        console.log(this.localStorage.type.list());
+        console.groupEnd();
+        throw `Modal default type: "${args.type}" unavailable`;
+      }
+      // Instance
+      sym = this.register.fetch(args.type);
+      instance = this.register.fetch(sym);
+      // Text
+      if (args.text) {
+        instance.setText = args.text;
+      } else {
+        console.warn("Nothing to show");
+      }
+      // Render
+      return instance.show();
+    } catch (error) {
+      e = error;
+      if (e instanceof Error) {
+        return console.error(e);
+      } else {
+        throw e;
+      }
+    }
+  }
+
+  make() {
+    var animations, func, templates;
+    templates = this.templates();
+    animations = this.animations;
+    func = {
+      beforeRegister: function(i) {
+        Object.defineProperties(i, {
+          refs: {
+            value: findAttr("ref", i.node),
+            writable: false,
+            configurable: false,
+            enumerable: false
+          },
+          setText: {
+            set: function(arg) {
+              var ref, ref1, ref2;
+              this.refs.title.innerHTML = (ref = arg.title) != null ? ref : "";
+              this.refs.msg.innerHTML = (ref1 = arg.message) != null ? ref1 : "";
+              return this.refs.btn.textContent = (ref2 = arg.button) != null ? ref2 : "";
+            }
+          }
+        });
+        return i.refs.btn.addEventListener("click", function() {
+          return i.hide();
+        });
+      },
+      onshow: async(i) => {
+        if (this.animations) {
+          if (i.isPreserved) {
+            i.node.classList.remove("hideDefaultModalBox");
+          }
+          await till(this.animationDurration);
+          i.refs.btn.disabled = false;
+        }
+      },
+      onhide: (i) => {
+        if (this.animations) {
+          i.node.classList.add("hideDefaultModalBox");
+          i.refs.btn.disabled = true;
+          return till(this.animationDurration);
+        }
+      }
+    };
+    [
+      {
+        id: "error",
+        name: "errorBox",
+        html: templates.errorBox,
+        handler: {
+          beforeRegister: function(i) {
+            return func.beforeRegister(i);
+          },
+          onshow: function(i) {
+            return func.onshow(i);
+          },
+          onhide: function(i) {
+            return func.onhide(i);
+          }
+        }
+      },
+      {
+        id: "success",
+        name: "successBox",
+        html: templates.successBox,
+        handler: {
+          beforeRegister: function(i) {
+            return func.beforeRegister(i);
+          },
+          onshow: function(i) {
+            return func.onshow(i);
+          },
+          onhide: function(i) {
+            return func.onhide(i);
+          }
+        }
+      },
+      {
+        id: "info",
+        name: "infoBox",
+        html: templates.infoBox,
+        handler: {
+          beforeRegister: function(i) {
+            return func.beforeRegister(i);
+          },
+          onshow: function(i) {
+            return func.onshow(i);
+          },
+          onhide: function(i) {
+            return func.onhide(i);
+          }
+        }
+      },
+      {
+        id: "text",
+        name: "textBox",
+        html: templates.textBox,
+        handler: {
+          beforeRegister: function(i) {
+            return func.beforeRegister(i);
+          },
+          onshow: function(i) {
+            return func.onshow(i);
+          },
+          onhide: function(i) {
+            return func.onhide(i);
+          }
+        }
+      }
+    ].forEach((obj) => {
+      this.add(obj);
+      this.register.add(obj.id, this.prepare(obj.name));
+      this.localStorage.type.add(obj.id);
+    });
+  }
+
+  templates() {
+    return {
+      errorBox: `<div class="modalBox error">
+  <div class="w-100 h-100 fixed-top container-fluid d-flex justify-content-center align-items-center">
+    <div class="border border-2 rounded border-danger p-2" style="max-width:75%;min-width:400px">
+      <!-- Title -->
+      <div>
+        <h2 class="text-danger" ref="title"></h2>
+      </div>
+      <!-- Message -->
+      <div class="p-2">
+        <p ref="msg"></p>
+      </div>
+      <!-- Button -->
+      <div class="text-end">
+        <button class="btn btn-danger" ref="btn"></button>
+      </div>
+    </div>
+  </div>
+</div>`,
+      successBox: `<div class="modalBox success">
+  <div class="w-100 h-100 fixed-top container-fluid d-flex justify-content-center align-items-center">
+    <div class="border border-2 rounded border-success p-2" style="max-width:75%;min-width:400px">
+      <!-- Title -->
+      <div>
+        <h2 class="text-success" ref="title"></h2>
+      </div>
+      <!-- Message -->
+      <div class="p-2">
+        <p ref="msg"></p>
+      </div>
+      <!-- Button -->
+      <div class="text-end">
+        <button class="btn btn-success" ref="btn"></button>
+      </div>
+    </div>
+  </div>
+</div>`,
+      infoBox: `<div class="modalBox info">
+  <div class="w-100 h-100 fixed-top container-fluid d-flex justify-content-center align-items-center">
+    <div class="border border-2 rounded border-primary p-2" style="max-width:75%;min-width:400px">
+      <!-- Title -->
+      <div>
+        <h2 class="text-primary" ref="title"></h2>
+      </div>
+      <!-- Message -->
+      <div class="p-2">
+        <p ref="msg"></p>
+      </div>
+      <!-- Button -->
+      <div class="text-end">
+        <button class="btn btn-primary" ref="btn"></button>
+      </div>
+    </div>
+  </div>
+</div>`,
+      textBox: `<div class="modalBox text">
+  <div class="w-100 h-100 fixed-top container-fluid d-flex justify-content-center align-items-center">
+    <div class="border border-2 rounded border-secondary p-2" style="max-width:75%;min-width:400px">
+      <!-- Title -->
+      <div>
+        <h2 class="text-secondary" ref="title"></h2>
+      </div>
+      <!-- Message -->
+      <div class="p-2">
+        <p ref="msg"></p>
+      </div>
+      <!-- Button -->
+      <div class="text-end">
+        <button class="btn btn-secondary" ref="btn"></button>
+      </div>
+    </div>
+  </div>
+</div>`
+    };
+  }
+
+  loadAnimations() {
+    var animationsCSS, css;
+    animationsCSS = document.createElement("style");
+    animationsCSS.type = 'text/css';
+    css = `@keyframes showDefaultModal {
+  from {opacity: 0;}
+  to {opacity: 1;}
+}
+@keyframes hideDefaultModal {
+  from {opacity: 1;}
+  to {opacity: 0;}
+}
+.modalBox {
+  opacity: 0;
+  animation-name: showDefaultModal;
+  animation-duration: ${this.animationDurration}ms;
+  animation-fill-mode: forwards;
+}
+.hideDefaultModalBox {
+  opacity: 1;
+  animation-name: hideDefaultModal;
+}`;
+    animationsCSS.appendChild(document.createTextNode(css));
+    document.head.prepend(animationsCSS);
+    console.info("Animations was loaded");
+  }
+
+  loadBootstrap() {
+    var bootstrapCSS;
+    bootstrapCSS = document.createElement("link");
+    bootstrapCSS.href = "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css";
+    bootstrapCSS.integrity = "sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH";
+    bootstrapCSS.rel = "stylesheet";
+    bootstrapCSS.crossOrigin = "anonymous";
+    bootstrapCSS.title = "Bootstrap_css";
+    document.head.prepend(bootstrapCSS);
+    console.info("Bootstrap 5.3.3.min was loaded");
   }
 
 };
