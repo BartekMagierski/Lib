@@ -77,6 +77,7 @@ const modal = new Modal();
       animation: {
         durration: 400//number in ms, default 400ms
       }
+      target: null// target for modal to render
     });
     modal.throwMsg({
       type: "text",

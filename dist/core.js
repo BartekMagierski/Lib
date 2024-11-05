@@ -453,6 +453,7 @@ ModalDefaults = class ModalDefaults extends Modal {
     super();
     this.args = args1;
     this.localStorage = {
+      target: null,
       type: {
         items: [],
         has: function(id) {
@@ -489,11 +490,15 @@ ModalDefaults = class ModalDefaults extends Modal {
       });
       this.loadAnimations();
     }
+    // target container
+    if (this.args.target) {
+      this.localStorage.target = this.args.target;
+    }
     this.make();
   }
 
   throwMsg(args) {
-    var e, instance, sym;
+    var e, instance, ref, sym;
     try {
       if (!this.localStorage.type.has(args.type)) {
         console.group("Modal defaults");
@@ -512,7 +517,7 @@ ModalDefaults = class ModalDefaults extends Modal {
         console.warn("Nothing to show");
       }
       // Render
-      return instance.show();
+      return instance.show((ref = this.localStorage.target) != null ? ref : document.body);
     } catch (error) {
       e = error;
       if (e instanceof Error) {
@@ -807,7 +812,7 @@ class requestFunctions {
 
       if(this.args.data) {
 
-        if( !Array.isArray(this.args.data) ) {
+        if(!Array.isArray(this.args.data) ) {
           throw "Wrong property instance. The 'data' property, should be an array instance";
         }
 
@@ -875,6 +880,8 @@ class requestFunctions {
               data.append(arg.name, arg.value);
             });
             this.data = data;
+        } else if(this.args.method === "PUT") {
+            this.data = this.args.data;
         }
       }
 
