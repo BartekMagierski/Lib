@@ -675,7 +675,7 @@ ModalDefaults = class ModalDefaults extends Modal {
         <p ref="msg"></p>
       </div>
       <!-- Button -->
-      <div class="button text-end">
+      <div class="close-btn text-end">
         <button class="btn btn-success" ref="btn"></button>
       </div>
     </div>
@@ -693,7 +693,7 @@ ModalDefaults = class ModalDefaults extends Modal {
         <p ref="msg"></p>
       </div>
       <!-- Button -->
-      <div class="button text-end">
+      <div class="close-btn text-end">
         <button class="btn btn-primary" ref="btn"></button>
       </div>
     </div>
@@ -701,7 +701,7 @@ ModalDefaults = class ModalDefaults extends Modal {
 </div>`,
       textBox: `<div class="modalBox text">
   <div class="wrapper w-100 h-100 fixed-top container-fluid d-flex justify-content-center align-items-center">
-    <div class="wapper-inner border border-2 rounded border-secondary p-2" style="max-width:75%;min-width:400px">
+    <div class="wrapper-inner border border-2 rounded border-secondary p-2" style="max-width:75%;min-width:400px">
       <!-- Title -->
       <div class="title">
         <h2 class="text-secondary" ref="title"></h2>
@@ -711,7 +711,7 @@ ModalDefaults = class ModalDefaults extends Modal {
         <p ref="msg"></p>
       </div>
       <!-- Button -->
-      <div class="button text-end">
+      <div class="close-btn text-end">
         <button class="btn btn-secondary" ref="btn"></button>
       </div>
     </div>
