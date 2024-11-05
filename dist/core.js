@@ -646,72 +646,72 @@ ModalDefaults = class ModalDefaults extends Modal {
   templates() {
     return {
       errorBox: `<div class="modalBox error">
-  <div class="w-100 h-100 fixed-top container-fluid d-flex justify-content-center align-items-center">
-    <div class="border border-2 rounded border-danger p-2" style="max-width:75%;min-width:400px">
+  <div class="wrapper w-100 h-100 fixed-top container-fluid d-flex justify-content-center align-items-center">
+    <div class="wrapper-inner border border-2 rounded border-danger p-2" style="max-width:75%;min-width:400px">
       <!-- Title -->
-      <div>
+      <div class="title">
         <h2 class="text-danger" ref="title"></h2>
       </div>
       <!-- Message -->
-      <div class="p-2">
+      <div class="message p-2">
         <p ref="msg"></p>
       </div>
       <!-- Button -->
-      <div class="text-end">
+      <div class="close-btn text-end">
         <button class="btn btn-danger" ref="btn"></button>
       </div>
     </div>
   </div>
 </div>`,
       successBox: `<div class="modalBox success">
-  <div class="w-100 h-100 fixed-top container-fluid d-flex justify-content-center align-items-center">
-    <div class="border border-2 rounded border-success p-2" style="max-width:75%;min-width:400px">
+  <div class="wrapper w-100 h-100 fixed-top container-fluid d-flex justify-content-center align-items-center">
+    <div class="wrapper-inner border border-2 rounded border-success p-2" style="max-width:75%;min-width:400px">
       <!-- Title -->
-      <div>
+      <div class="title">
         <h2 class="text-success" ref="title"></h2>
       </div>
       <!-- Message -->
-      <div class="p-2">
+      <div class="message p-2">
         <p ref="msg"></p>
       </div>
       <!-- Button -->
-      <div class="text-end">
+      <div class="button text-end">
         <button class="btn btn-success" ref="btn"></button>
       </div>
     </div>
   </div>
 </div>`,
       infoBox: `<div class="modalBox info">
-  <div class="w-100 h-100 fixed-top container-fluid d-flex justify-content-center align-items-center">
-    <div class="border border-2 rounded border-primary p-2" style="max-width:75%;min-width:400px">
+  <div class="wrapper w-100 h-100 fixed-top container-fluid d-flex justify-content-center align-items-center">
+    <div class="wrapper-inner border border-2 rounded border-primary p-2" style="max-width:75%;min-width:400px">
       <!-- Title -->
-      <div>
+      <div class="title">
         <h2 class="text-primary" ref="title"></h2>
       </div>
       <!-- Message -->
-      <div class="p-2">
+      <div class="message p-2">
         <p ref="msg"></p>
       </div>
       <!-- Button -->
-      <div class="text-end">
+      <div class="button text-end">
         <button class="btn btn-primary" ref="btn"></button>
       </div>
     </div>
   </div>
 </div>`,
       textBox: `<div class="modalBox text">
-  <div class="w-100 h-100 fixed-top container-fluid d-flex justify-content-center align-items-center">
-    <div class="border border-2 rounded border-secondary p-2" style="max-width:75%;min-width:400px">
+  <div class="wrapper w-100 h-100 fixed-top container-fluid d-flex justify-content-center align-items-center">
+    <div class="wapper-inner border border-2 rounded border-secondary p-2" style="max-width:75%;min-width:400px">
       <!-- Title -->
-      <div>
+      <div class="title">
         <h2 class="text-secondary" ref="title"></h2>
       </div>
       <!-- Message -->
-      <div class="p-2">
+      <div class="message p-2">
         <p ref="msg"></p>
       </div>
       <!-- Button -->
-      <div class="text-end">
+      <div class="button text-end">
         <button class="btn btn-secondary" ref="btn"></button>
       </div>
     </div>
